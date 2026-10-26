@@ -9451,3 +9451,15 @@ The test failed twice in CI after #1123, on shards that run it among other tests
 | `motionBudgetFrom` returns the end of the compose only, which is upstream main | "highlighted 5.134s / 2.372s / 5.348s after the pointer stopped; the budget is 1.5s", three runs out of three | **caught** under load |
 
 Without the busy loops, upstream main failed one run in three (2.6 s) with tuios at `GOMAXPROCS=1`, and passed with 0.5 to 1.4 s on two cores with two busy loops. The fixed build passed every run: 30 to 113 ms with no load or two busy loops, 43 to 99 ms with four.
+
+### capture-pane on a TML surface, and the agent as its owner
+
+`TestTMLShowPaneAndClose` reads the surface with capture-pane and checks that
+each captured line is on the screen, before and after a click on a tab that
+binds no state path. `TestTMLOwnerNameMustBeUnique` opens surfaces from panes
+that report an agent. Run on 2026-10-26.
+
+| Bug | Fix removed | How | Tests that fail | Verdict |
+|-----|-------------|-----|-----------------|---------|
+| The capture shows another view than the person's | the view report in `tmlViewChange` | it returns nil at once | `TestTMLShowPaneAndClose` ("the captured line \"▌ internal/session  TestAttachRace ...\" is not on the screen": the cursor row of a new view) | **caught** |
+| A surface from an agent pane names a hash | the agent name in `tmlAgentName` | it returns "" at once | `TestTMLOwnerNameMustBeUnique` ("from pane 7ed13d20 · Agent" for the claude pane) | **caught** |

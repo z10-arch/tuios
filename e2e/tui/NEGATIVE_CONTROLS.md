@@ -9451,3 +9451,15 @@ The test failed twice in CI after #1123, on shards that run it among other tests
 | `motionBudgetFrom` returns the end of the compose only, which is upstream main | "highlighted 5.134s / 2.372s / 5.348s after the pointer stopped; the budget is 1.5s", three runs out of three | **caught** under load |
 
 Without the busy loops, upstream main failed one run in three (2.6 s) with tuios at `GOMAXPROCS=1`, and passed with 0.5 to 1.4 s on two cores with two busy loops. The fixed build passed every run: 30 to 113 ms with no load or two busy loops, 43 to 99 ms with four.
+
+## A floating pane resized over the tiling
+
+`TestFloatMouseResizeKeepsTheTiles` and `TestFloatEdgeResizeKeepsTheTile` in `scratch_mouse_test.go` tile two panes, float one with the leader, `t`, `f`, and resize the float with the mouse. After each drag they read `list-windows --json`. The float must take the new size, and the tiled pane must keep its rectangle. The edge test runs on the shipped looks and on own borders with the dock on top. Run on 2026-10-26 on Linux, against upstream main at 167078a43.
+
+| Control: what was cut | Where it fails | Verdict |
+| --- | --- | --- |
+| Every part of the fix, which is upstream main | `TestFloatMouseResizeKeepsTheTiles`: the bottom-right alt+right drag leaves the float at 68x43, the bottom border drag moves the float to y=-3. `TestFloatEdgeResizeKeepsTheTile`: "top in its slot" leaves the float at y=2. "top one row below its slot" moves the tiled pane from y=2 h=43 to y=17 h=28, the float's row and height. "bottom border in its slot" moves the float to y=-3. All six cases fail | **caught** |
+| The floating-pane checks in the edge drag (`tiled := o.AutoTiling` in `applyBorderResize`) and in the split scan (`adjustTilingNeighborsGeneric`) | `TestFloatEdgeResizeKeepsTheTile/*/bottom_border_in_its_slot`: the tiled pane goes from h=43 to h=38 with the float, on both looks | **caught** |
+| The grabbed pane in the corner drag (`focusedWindow = o.Windows[o.DraggedWindowIndex]` in `handleMouseMotion`) | `TestFloatMouseResizeKeepsTheTiles`, the drag across a peer's focus change: the float stops at w=52 h=32, want w=56 h=36 | **caught** |
+
+The tiled pane does not move in the peer-sync control: it fills the pane area, so the tiling path holds each of its edges. The cut shows as a float that stops resizing.
